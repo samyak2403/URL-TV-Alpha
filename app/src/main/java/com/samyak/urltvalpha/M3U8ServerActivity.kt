@@ -2,7 +2,6 @@ package com.samyak.urltvalpha
 
 import android.graphics.Rect
 import android.os.Bundle
-import android.util.Log
 import android.view.MenuItem
 import android.view.View
 import android.view.WindowManager
@@ -14,7 +13,6 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.ItemDecoration
 import com.airbnb.lottie.LottieAnimationView
 import com.google.firebase.database.*
-import com.samyak.urlplayerbeta.ChannelAdapter
 import com.samyak.urltvalpha.models.Channel
 import android.content.Context
 import android.net.ConnectivityManager
