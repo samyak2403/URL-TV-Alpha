@@ -22,4 +22,4 @@ TBD (To be decided)
 
 ---
 
-For any questions or updates, reach out to [your contact info].  
+For any questions or updates, reach out to [Samyak Kamble](mailto:arrowwouldpro@gmail.com)  .  
