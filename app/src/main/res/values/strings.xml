@@ -127,6 +127,7 @@
     <string name="version_format">Version %s</string>
     <string name="developed_by">Developed by</string>
     <string name="developer_name">Samyak2403\nhttps://github.com/samyak2403</string>
+    <string name="developer_name_display">Samyak Kamble</string>
 
     <string name="about">About</string>
 
@@ -137,5 +138,10 @@
 
     <string name="app_feedback_message">Thanks for using our app!</string>
     <string name="email_error_message">Couldn\'t open email app</string>
+    <string name="github_error_message">Couldn\'t open GitHub profile</string>
+    <string name="github_profile">GitHub Profile</string>
+    <string name="view_on_github">View on GitHub</string>
+    <string name="developer_avatar">Developer Avatar</string>
+    <string name="copyright_text">© 2023 URL TV Alpha. All rights reserved.</string>
 
 </resources>

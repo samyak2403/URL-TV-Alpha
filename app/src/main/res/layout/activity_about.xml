@@ -13,6 +13,8 @@
         android:layout_height="wrap_content"
         android:background="@color/Red"
         android:elevation="4dp"
+        app:liftOnScroll="true"
+        app:liftOnScrollTargetViewId="@id/scrollView"
         android:stateListAnimator="@null">
 
         <androidx.appcompat.widget.Toolbar
@@ -36,38 +38,53 @@
         android:scrollIndicators="none"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
-        <androidx.constraintlayout.widget.ConstraintLayout
+        <androidx.constraintlayout.motion.widget.MotionLayout
+            android:id="@+id/motionLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:padding="16dp">
+            android:padding="16dp"
+            app:layoutDescription="@xml/about_scene">
+
+            <View
+                android:id="@+id/iconBackground"
+                android:layout_width="160dp"
+                android:layout_height="160dp"
+                android:layout_marginTop="24dp"
+                android:alpha="1"
+                android:background="@drawable/circle_gradient_background"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
 
             <com.google.android.material.imageview.ShapeableImageView
                 android:id="@+id/appIcon"
                 android:layout_width="120dp"
                 android:layout_height="120dp"
-                android:layout_marginTop="24dp"
                 android:contentDescription="@string/app_name"
-                android:elevation="4dp"
+                android:elevation="8dp"
+                android:padding="4dp"
                 android:src="@mipmap/ic_launcher"
                 android:transitionName="app_icon"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="@id/iconBackground"
+                app:layout_constraintEnd_toEndOf="@id/iconBackground"
+                app:layout_constraintStart_toStartOf="@id/iconBackground"
+                app:layout_constraintTop_toTopOf="@id/iconBackground"
                 app:shapeAppearanceOverlay="@style/CircularImageView"
                 app:strokeColor="@color/Red"
-                app:strokeWidth="2dp" />
+                app:strokeWidth="3dp" />
 
             <com.google.android.material.textview.MaterialTextView
                 android:id="@+id/appNameText"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
+                android:layout_marginTop="24dp"
                 android:text="@string/app_name"
-                android:textAppearance="@style/TextAppearance.MaterialComponents.Headline5"
+                android:textAppearance="@style/TextAppearance.MaterialComponents.Headline4"
+                android:textColor="@color/Red"
                 android:textStyle="bold"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/appIcon"
+                app:layout_constraintTop_toBottomOf="@id/iconBackground"
                 tools:text="URL TV" />
 
             <com.google.android.material.textview.MaterialTextView
@@ -77,7 +94,7 @@
                 android:layout_marginTop="8dp"
                 android:alpha="0.8"
                 android:text="@string/version_format"
-                android:textAppearance="@style/TextAppearance.MaterialComponents.Body2"
+                android:textAppearance="@style/TextAppearance.MaterialComponents.Body1"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/appNameText"
@@ -85,10 +102,10 @@
 
             <View
                 android:id="@+id/divider"
-                android:layout_width="100dp"
-                android:layout_height="2dp"
-                android:layout_marginTop="24dp"
-                android:alpha="0.1"
+                android:layout_width="120dp"
+                android:layout_height="3dp"
+                android:layout_marginTop="32dp"
+                android:alpha="0.2"
                 android:background="@color/Red"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
@@ -99,11 +116,12 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginHorizontal="16dp"
-                android:layout_marginTop="24dp"
+                android:layout_marginTop="32dp"
                 android:gravity="center"
-                android:lineSpacingMultiplier="1.2"
+                android:lineSpacingMultiplier="1.3"
                 android:text="@string/app_description"
                 android:textAppearance="@style/TextAppearance.MaterialComponents.Body1"
+                android:textSize="16sp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/divider"
@@ -111,12 +129,13 @@
 
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/developer_card"
+                style="@style/DeveloperCardStyle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginHorizontal="8dp"
-                android:layout_marginTop="24dp"
+                android:layout_marginTop="32dp"
                 android:layout_marginBottom="16dp"
-                style="@style/DeveloperCardStyle"
+                app:cardBackgroundColor="@android:color/white"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/descriptionText">
 
@@ -125,37 +144,118 @@
                     android:layout_height="wrap_content"
                     android:padding="16dp">
 
+                    <View
+                        android:id="@+id/avatarBackground"
+                        android:layout_width="80dp"
+                        android:layout_height="80dp"
+                        android:alpha="1"
+                        android:background="@drawable/circle_gradient_background"
+                        app:layout_constraintBottom_toBottomOf="@id/githubButton"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent" />
+
+                    <com.google.android.material.imageview.ShapeableImageView
+                        android:id="@+id/developerAvatar"
+                        android:layout_width="64dp"
+                        android:layout_height="64dp"
+                        android:contentDescription="@string/developer_avatar"
+                        android:elevation="4dp"
+                        android:padding="2dp"
+                        android:src="@drawable/ic_developer_avatar"
+                        app:layout_constraintBottom_toBottomOf="@id/avatarBackground"
+                        app:layout_constraintEnd_toEndOf="@id/avatarBackground"
+                        app:layout_constraintStart_toStartOf="@id/avatarBackground"
+                        app:layout_constraintTop_toTopOf="@id/avatarBackground"
+                        app:shapeAppearanceOverlay="@style/CircularImageView"
+                        app:strokeColor="@color/Red"
+                        app:strokeWidth="2dp"
+                        app:tint="@color/Red" />
+
                     <com.google.android.material.textview.MaterialTextView
                         android:id="@+id/developerLabel"
-                        android:layout_width="wrap_content"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
                         android:text="@string/developed_by"
                         android:textAppearance="@style/TextAppearance.MaterialComponents.Subtitle1"
                         android:textStyle="bold"
                         app:layout_constraintEnd_toEndOf="parent"
-                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintStart_toEndOf="@id/avatarBackground"
                         app:layout_constraintTop_toTopOf="parent"
                         tools:text="Developed by" />
 
                     <com.google.android.material.textview.MaterialTextView
                         android:id="@+id/developerName"
-                        android:layout_width="wrap_content"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:text="@string/developer_name"
-                        android:textAppearance="@style/TextAppearance.MaterialComponents.Body2"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginTop="4dp"
+                        android:text="@string/developer_name_display"
+                        android:textAppearance="@style/TextAppearance.MaterialComponents.Body1"
                         android:textColor="@color/Red"
-                        android:gravity="center"
+                        android:textStyle="bold"
                         app:layout_constraintEnd_toEndOf="parent"
-                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintStart_toEndOf="@id/avatarBackground"
                         app:layout_constraintTop_toBottomOf="@id/developerLabel"
                         tools:text="Samyak Kamble" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/githubButton"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton.Icon"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginTop="8dp"
+                        android:text="@string/view_on_github"
+                        android:textColor="@color/Red"
+                        app:icon="@drawable/ic_github"
+                        app:iconTint="@color/Red"
+                        app:layout_constraintStart_toEndOf="@id/avatarBackground"
+                        app:layout_constraintTop_toBottomOf="@id/developerName"
+                        app:strokeColor="@color/Red" />
+
+                    <View
+                        android:id="@+id/copyrightDivider"
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginTop="24dp"
+                        android:alpha="0.1"
+                        android:background="@color/Red"
+                        app:layout_constraintTop_toBottomOf="@id/githubButton" />
+
+                    <com.google.android.material.textview.MaterialTextView
+                        android:id="@+id/copyrightText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:gravity="center"
+                        android:text="@string/copyright_text"
+                        android:textAppearance="@style/TextAppearance.MaterialComponents.Caption"
+                        android:textColor="#757575"
+                        app:layout_constraintTop_toBottomOf="@id/copyrightDivider" />
 
                 </androidx.constraintlayout.widget.ConstraintLayout>
 
             </com.google.android.material.card.MaterialCardView>
 
-        </androidx.constraintlayout.widget.ConstraintLayout>
+            <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+                android:id="@+id/fabGithub"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="16dp"
+                android:contentDescription="@string/github_profile"
+                android:text="@string/view_on_github"
+                android:textColor="@android:color/white"
+                android:visibility="invisible"
+                app:backgroundTint="@color/Red"
+                app:icon="@drawable/ic_github"
+                app:iconTint="@android:color/white"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent" />
+
+        </androidx.constraintlayout.motion.widget.MotionLayout>
+
+        
 
     </androidx.core.widget.NestedScrollView>
 
