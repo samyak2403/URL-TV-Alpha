@@ -75,4 +75,8 @@
         <item name="android:textStyle">normal</item>
         <item name="android:letterSpacing">0.01</item>
     </style>
+
+    <style name="ToolbarTheme" parent="ThemeOverlay.AppCompat.Dark.ActionBar">
+        <item name="android:textColorSecondary">@android:color/white</item>
+    </style>
 </resources>

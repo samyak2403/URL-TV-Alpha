@@ -83,7 +83,7 @@ class M3U8ServerActivity : AppCompatActivity() {
         recyclerView.adapter = adapter
 
         // Set background color
-        window.decorView.setBackgroundColor(resources.getColor(R.color.bein_red))
+        window.decorView.setBackgroundColor(resources.getColor(R.color.Red_light))
 
         // Initialize Firebase
         databaseReference = FirebaseDatabase.getInstance().getReference("channels")
@@ -95,7 +95,7 @@ class M3U8ServerActivity : AppCompatActivity() {
         window.apply {
             clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
             addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
-            statusBarColor = resources.getColor(R.color.bein_red)
+            statusBarColor = resources.getColor(R.color.Red)
         }
     }
 

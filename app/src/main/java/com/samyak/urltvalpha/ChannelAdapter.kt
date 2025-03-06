@@ -70,30 +70,51 @@ class ChannelAdapter(
             context.startActivity(intent)
         } catch (e: Exception) {
             e.printStackTrace()
-            // Show dialog to install URL Player Beta
-            android.app.AlertDialog.Builder(context)
-                .setTitle("URL Player Beta Required")
-                .setMessage("This app requires URL Player Beta to play content. Would you like to install it now?")
-                .setPositiveButton("Install") { _, _ ->
-                    try {
-                        // Open Play Store to URL Player Beta app
-                        val playStoreIntent = Intent(Intent.ACTION_VIEW).apply {
-                            data = Uri.parse("market://details?id=com.samyak.urlplayerbeta")
-                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        }
-                        context.startActivity(playStoreIntent)
-                    } catch (e: Exception) {
-                        // If Play Store app is not available, open browser
-                        val webIntent = Intent(Intent.ACTION_VIEW).apply {
-                            data = Uri.parse("https://play.google.com/store/apps/details?id=com.samyak.urlplayerbeta")
-                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        }
-                        context.startActivity(webIntent)
-                    }
-                }
-                .setNegativeButton("Cancel", null)
-                .show()
+            // Show custom dialog to install URL Player Beta
+            showCustomInstallDialog()
         }
+    }
+    
+    private fun showCustomInstallDialog() {
+        // Create custom dialog
+        val dialog = android.app.Dialog(context)
+        dialog.requestWindowFeature(android.view.Window.FEATURE_NO_TITLE)
+        dialog.setContentView(R.layout.dialog_install_player)
+        dialog.window?.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT))
+        
+        // Set dialog width to 90% of screen width
+        val displayMetrics = context.resources.displayMetrics
+        val width = (displayMetrics.widthPixels * 0.9).toInt()
+        dialog.window?.setLayout(width, android.view.ViewGroup.LayoutParams.WRAP_CONTENT)
+        
+        // Set up buttons
+        val btnInstall = dialog.findViewById<android.widget.Button>(R.id.btnInstall)
+        val btnCancel = dialog.findViewById<android.widget.Button>(R.id.btnCancel)
+        
+        btnInstall.setOnClickListener {
+            try {
+                // Open Play Store to URL Player Beta app
+                val playStoreIntent = Intent(Intent.ACTION_VIEW).apply {
+                    data = Uri.parse("market://details?id=com.samyak.urlplayerbeta")
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                context.startActivity(playStoreIntent)
+            } catch (e: Exception) {
+                // If Play Store app is not available, open browser
+                val webIntent = Intent(Intent.ACTION_VIEW).apply {
+                    data = Uri.parse("https://play.google.com/store/apps/details?id=com.samyak.urlplayerbeta")
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                context.startActivity(webIntent)
+            }
+            dialog.dismiss()
+        }
+        
+        btnCancel.setOnClickListener {
+            dialog.dismiss()
+        }
+        
+        dialog.show()
     }
 
     override fun getItemCount(): Int = channelList.size

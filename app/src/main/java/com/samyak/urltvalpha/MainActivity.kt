@@ -1,29 +1,40 @@
 package com.samyak.urltvalpha
 
+import android.content.ActivityNotFoundException
 import android.content.Context
+import android.content.Intent
 import android.graphics.Color
 import android.graphics.PorterDuff
+import android.graphics.Typeface
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
+import android.net.Uri
 import android.os.Bundle
 import android.view.Menu
 import android.view.View
 import android.view.WindowManager
 import android.widget.EditText
 import android.widget.ImageView
+import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
 import androidx.appcompat.widget.Toolbar
+import androidx.core.content.ContextCompat
+import androidx.core.view.GravityCompat
+import androidx.drawerlayout.widget.DrawerLayout
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.navigation.NavigationView
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import com.samyak.urltvalpha.models.Category
+import android.content.res.ColorStateList
 
 class MainActivity : AppCompatActivity() {
 
@@ -31,6 +42,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var categoryAdapter: CategoryAdapter
     private lateinit var databaseReference: DatabaseReference
     private lateinit var loadingLayout: View
+    private lateinit var drawerLayout: DrawerLayout
     private val categoryList = mutableListOf<Category>()
     private var originalList = mutableListOf<Category>()
 
@@ -41,7 +53,16 @@ class MainActivity : AppCompatActivity() {
         // Setup toolbar
         val toolbar = findViewById<Toolbar>(R.id.toolbar)
         setSupportActionBar(toolbar)
-        supportActionBar?.title = "Yacine TV"
+        supportActionBar?.setDisplayShowTitleEnabled(false)
+        val customTitle = TextView(this)
+        customTitle.text = "URL TV Alpha"
+        customTitle.setTextColor(Color.WHITE)
+        customTitle.textSize = 20f
+        customTitle.typeface = Typeface.DEFAULT_BOLD
+        toolbar.addView(customTitle)
+
+        // Setup drawer layout
+        setupNavigationDrawer(toolbar)
 
         // Initialize views
         loadingLayout = findViewById(R.id.loadingLayout)
@@ -49,7 +70,7 @@ class MainActivity : AppCompatActivity() {
         recyclerView.layoutManager = LinearLayoutManager(this)
 
         // Set background color
-        window.decorView.setBackgroundColor(resources.getColor(R.color.bein_red))
+        window.decorView.setBackgroundColor(resources.getColor(R.color.Red_light))
 
         // Initialize Firebase
         databaseReference = FirebaseDatabase.getInstance().getReference("categories")
@@ -65,7 +86,113 @@ class MainActivity : AppCompatActivity() {
         window.apply {
             clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
             addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
-            statusBarColor = resources.getColor(R.color.bein_red)
+            statusBarColor = resources.getColor(R.color.Red)
+        }
+    }
+
+    private fun setupNavigationDrawer(toolbar: Toolbar) {
+        drawerLayout = findViewById(R.id.drawer_layout)
+        val navigationView = findViewById<NavigationView>(R.id.nav_view)
+        
+        // Create ActionBarDrawerToggle
+        val toggle = ActionBarDrawerToggle(
+            this, drawerLayout, toolbar,
+            R.string.navigation_drawer_open,
+            R.string.navigation_drawer_close
+        )
+        
+        // Set the drawer toggle color to red
+        toggle.drawerArrowDrawable.color = resources.getColor(R.color.white)
+        
+        drawerLayout.addDrawerListener(toggle)
+        toggle.syncState()
+        
+        // Set navigation view icon tint to red
+        navigationView.itemIconTintList = ColorStateList.valueOf(resources.getColor(R.color.Red))
+        
+        // Handle navigation item clicks
+        navigationView.setNavigationItemSelectedListener { menuItem ->
+            drawerLayout.closeDrawer(GravityCompat.START)
+            when (menuItem.itemId) {
+                R.id.nav_home -> {
+                    // Handle home click
+                    Toast.makeText(this, "Home", Toast.LENGTH_SHORT).show()
+                    true
+                }
+                R.id.nav_favorites -> {
+                    // Handle favorites click
+                    Toast.makeText(this, "Favorites", Toast.LENGTH_SHORT).show()
+                    true
+                }
+                R.id.nav_settings -> {
+                    // Handle settings click
+                    Toast.makeText(this, "Settings", Toast.LENGTH_SHORT).show()
+                    true
+                }
+                R.id.nav_rate -> {
+                    rateApp()
+                    true
+                }
+                R.id.nav_share -> {
+                    shareApp()
+                    true
+                }
+                R.id.nav_privacy -> {
+                    openPrivacyPolicy()
+                    true
+                }
+                R.id.nav_contact -> {
+                    contactUs()
+                    true
+                }
+                R.id.nav_about -> {
+                    startActivity(Intent(this, AboutActivity::class.java))
+                    true
+                }
+                else -> false
+            }
+        }
+    }
+
+    private fun rateApp() {
+        try {
+            val uri = Uri.parse("market://details?id=$packageName")
+            val intent = Intent(Intent.ACTION_VIEW, uri)
+            intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY or Intent.FLAG_ACTIVITY_NEW_DOCUMENT or Intent.FLAG_ACTIVITY_MULTIPLE_TASK)
+            startActivity(intent)
+        } catch (e: ActivityNotFoundException) {
+            val uri = Uri.parse("http://play.google.com/store/apps/details?id=$packageName")
+            startActivity(Intent(Intent.ACTION_VIEW, uri))
+        }
+    }
+
+    private fun shareApp() {
+        val shareIntent = Intent(Intent.ACTION_SEND)
+        shareIntent.type = "text/plain"
+        shareIntent.putExtra(Intent.EXTRA_SUBJECT, getString(R.string.app_name))
+        val shareMessage = "Check out this app: https://play.google.com/store/apps/details?id=$packageName"
+        shareIntent.putExtra(Intent.EXTRA_TEXT, shareMessage)
+        startActivity(Intent.createChooser(shareIntent, getString(R.string.share_message)))
+    }
+
+    private fun openPrivacyPolicy() {
+        try {
+            val intent = Intent(Intent.ACTION_VIEW)
+            intent.data = Uri.parse("https://yourprivacypolicyurl.com")
+            startActivity(intent)
+        } catch (e: Exception) {
+            Toast.makeText(this, getString(R.string.error_privacy_policy), Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun contactUs() {
+        try {
+            val intent = Intent(Intent.ACTION_SENDTO)
+            intent.data = Uri.parse("mailto:your-email@example.com")
+            intent.putExtra(Intent.EXTRA_SUBJECT, getString(R.string.email_subject))
+            startActivity(intent)
+        } catch (e: Exception) {
+            Toast.makeText(this, getString(R.string.error_no_email), Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -182,5 +309,13 @@ class MainActivity : AppCompatActivity() {
             capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) ||
             capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)
         )
+    }
+    
+    override fun onBackPressed() {
+        if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
+            drawerLayout.closeDrawer(GravityCompat.START)
+        } else {
+            super.onBackPressed()
+        }
     }
 }
