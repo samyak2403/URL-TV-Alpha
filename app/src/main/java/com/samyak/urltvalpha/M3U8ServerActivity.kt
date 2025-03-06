@@ -112,10 +112,11 @@ class M3U8ServerActivity : AppCompatActivity() {
             // Optimize RecyclerView performance
             setHasFixedSize(true)
             itemAnimator = DefaultItemAnimator()
-            // Remove padding from RecyclerView since we're handling it in decoration
-            setPadding(spacing / 2, spacing / 2, spacing / 2, spacing / 2)
+            // Apply padding to match the UI in the image
+            setPadding(spacing, spacing, spacing, spacing)
+            clipToPadding = false
             // Add item decoration for grid spacing
-            addItemDecoration(GridSpacingItemDecoration())
+            addItemDecoration(GridSpacingItemDecoration(spacing))
         }
 
         // Initialize adapter with efficient update strategy
@@ -166,9 +167,7 @@ class M3U8ServerActivity : AppCompatActivity() {
         }
     }
 
-    private inner class GridSpacingItemDecoration : RecyclerView.ItemDecoration() {
-        private val spacing = resources.getDimensionPixelSize(R.dimen.grid_spacing)
-        
+    private inner class GridSpacingItemDecoration(private val spacing: Int) : RecyclerView.ItemDecoration() {
         override fun getItemOffsets(
             outRect: Rect,
             view: View,
@@ -178,10 +177,8 @@ class M3U8ServerActivity : AppCompatActivity() {
             val position = parent.getChildAdapterPosition(view)
             if (position < 0) return // Invalid position
             
-            val column = position % GRID_SPAN_COUNT
-            
-            // Apply equal spacing to all items
-            // We use half spacing for left/right edges to ensure consistent visual spacing
+            // Apply equal spacing to all sides of each item
+            // This creates a uniform grid with equal spacing between items
             outRect.left = spacing / 2
             outRect.right = spacing / 2
             outRect.top = spacing / 2
