@@ -2,7 +2,6 @@ package com.samyak.urltvalpha
 
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
 import android.view.LayoutInflater
 import android.view.View
@@ -10,23 +9,17 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.request.RequestOptions
 import com.samyak.urltvalpha.models.Channel
 
+
 class ChannelAdapter(
     private val channelList: List<Channel>,
     private val context: Context
 ) : RecyclerView.Adapter<ChannelAdapter.ChannelViewHolder>() {
-
-    companion object {
-        private const val URL_PLAYER_PACKAGE = "com.samyak.urlplayerbeta"
-        private const val PLAYSTORE_URL = "https://play.google.com/store/apps/details?id=$URL_PLAYER_PACKAGE"
-        private const val PLAYER_ACTIVITY = "com.samyak.urlplayerbeta.screen.PlayerActivity"
-    }
 
     private val glideOptions = RequestOptions()
         .diskCacheStrategy(DiskCacheStrategy.ALL)
@@ -54,74 +47,52 @@ class ChannelAdapter(
         }
 
         holder.itemView.setOnClickListener {
-            launchUrlPlayer(channel)
+            playUrl(channel)
         }
     }
 
-    private fun launchUrlPlayer(channel: Channel) {
-        // First check if player app is installed
-        if (checkPlayerAppInstalled()) {
-            // Player is installed, launch it
-            launchPlayerWithChannel(channel)
-        } else {
-            // Player not installed, show install dialog
-            showPlayerInstallDialog()
-        }
-    }
-
-    private fun checkPlayerAppInstalled(): Boolean {
-        return try {
-            // Try to get package info - if succeeds, app is installed
-            context.packageManager.getApplicationInfo(URL_PLAYER_PACKAGE, 0)
-            true
-        } catch (e: PackageManager.NameNotFoundException) {
-            // Package not found - app is not installed
-            false
-        }
-    }
-
-    private fun launchPlayerWithChannel(channel: Channel) {
+    private fun playUrl(channel: Channel) {
         try {
+            // Create an explicit intent to the URL Player Beta app
             val intent = Intent().apply {
-                setClassName(URL_PLAYER_PACKAGE, PLAYER_ACTIVITY)
-                putExtra("videoUrl", channel.link)
-                putExtra("videoTitle", channel.name)
-                putExtra("channelLogo", channel.logo)
-                putExtra("videoType", "m3u8")
-                putExtra("isLive", true)
+                // Set the correct package and activity name
+                setClassName("com.samyak.urlplayerbeta", "com.samyak.urlplayerbeta.screen.PlayerActivity")
+                // Use the correct extra keys that the PlayerActivity expects
+                putExtra("URL", channel.link)
+                putExtra("CHANNEL_NAME", channel.name)
+                putExtra("USER_AGENT", "URLPlayerBeta")
+                // Add flags for launching from another app
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
             }
+            
+            // Try to start the activity
             context.startActivity(intent)
         } catch (e: Exception) {
-            Toast.makeText(context, "Error opening player app", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    private fun showPlayerInstallDialog() {
-        AlertDialog.Builder(context)
-            .setTitle("Install Player App")
-            .setMessage("To watch channels, you need to install URL Player Beta app")
-            .setPositiveButton("Install Now") { _, _ ->
-                openPlayStore()
-            }
-            .setNegativeButton("Later", null)
-            .setCancelable(false)
-            .show()
-    }
-
-    private fun openPlayStore() {
-        try {
-            // Try opening Play Store app directly
-            context.startActivity(Intent(Intent.ACTION_VIEW).apply {
-                data = Uri.parse("market://details?id=$URL_PLAYER_PACKAGE")
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            })
-        } catch (e: Exception) {
-            // Fallback to browser if Play Store app not available
-            context.startActivity(Intent(Intent.ACTION_VIEW).apply {
-                data = Uri.parse("https://play.google.com/store/apps/details?id=$URL_PLAYER_PACKAGE")
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            })
+            e.printStackTrace()
+            // Show dialog to install URL Player Beta
+            android.app.AlertDialog.Builder(context)
+                .setTitle("URL Player Beta Required")
+                .setMessage("This app requires URL Player Beta to play content. Would you like to install it now?")
+                .setPositiveButton("Install") { _, _ ->
+                    try {
+                        // Open Play Store to URL Player Beta app
+                        val playStoreIntent = Intent(Intent.ACTION_VIEW).apply {
+                            data = Uri.parse("market://details?id=com.samyak.urlplayerbeta")
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        }
+                        context.startActivity(playStoreIntent)
+                    } catch (e: Exception) {
+                        // If Play Store app is not available, open browser
+                        val webIntent = Intent(Intent.ACTION_VIEW).apply {
+                            data = Uri.parse("https://play.google.com/store/apps/details?id=com.samyak.urlplayerbeta")
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        }
+                        context.startActivity(webIntent)
+                    }
+                }
+                .setNegativeButton("Cancel", null)
+                .show()
         }
     }
 

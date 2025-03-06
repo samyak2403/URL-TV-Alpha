@@ -7,8 +7,15 @@ junitVersion = "1.2.1"
 espressoCore = "3.6.1"
 appcompat = "1.7.0"
 material = "1.12.0"
+browser = "1.8.0"
+verticalSeekbarBar = "1.2.7"
+doubleTapPlayerView = "1.0.4"
+
 activity = "1.10.0"
 constraintlayout = "2.2.0"
+exoplayerCoreVer = "2.16.1"
+exoplayerUiVer = "2.16.1"
+exoplayerDashVer = "2.16.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -19,6 +26,14 @@ androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 androidx-activity = { group = "androidx.activity", name = "activity", version.ref = "activity" }
 androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
+
+verticalSeekbar = {group = "com.github.lukelorusso", name = "VerticalSeekBar", version.ref = "verticalSeekbarBar"}
+doubleTapPlayerView = {group = "com.github.vkay94", name = "DoubleTapPlayerView", version.ref = "doubleTapPlayerView"}
+androidx-browser = {group = "androidx.browser", name = "browser", version.ref = "browser"}
+exoplayerCore = {group = "com.google.android.exoplayer", name = "exoplayer", version.ref = "exoplayerCoreVer"}
+exoplayerUi = {group = "com.google.android.exoplayer", name = "exoplayer-ui", version.ref = "exoplayerUiVer"}
+exoplayerDash = {group = "com.google.android.exoplayer", name = "exoplayer-dash", version.ref = "exoplayerDashVer"}
+
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
