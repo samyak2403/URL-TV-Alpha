@@ -1,192 +1,325 @@
 package com.samyak.urltvalpha
 
+import android.content.Context
+import android.graphics.Color
+import android.graphics.PorterDuff
 import android.graphics.Rect
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.os.Bundle
+import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.view.WindowManager
-import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.Toolbar
-import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.RecyclerView.ItemDecoration
-import com.airbnb.lottie.LottieAnimationView
-import com.google.firebase.database.*
-import com.samyak.urltvalpha.models.Channel
-import android.content.Context
-import android.net.ConnectivityManager
-import android.net.NetworkCapabilities
-import android.view.Menu
-import androidx.appcompat.widget.SearchView
-import android.graphics.Color
-import android.graphics.PorterDuff
 import android.widget.EditText
 import android.widget.ImageView
+import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.SearchView
+import androidx.core.content.ContextCompat
+import androidx.core.view.isVisible
+import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.DefaultItemAnimator
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.google.firebase.database.*
+import com.samyak.urltvalpha.databinding.ActivityM3U8ServerBinding
+import com.samyak.urltvalpha.models.Channel
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flowOn
+import java.util.concurrent.TimeUnit
 
 class M3U8ServerActivity : AppCompatActivity() {
 
-    private lateinit var recyclerView: RecyclerView
+    private lateinit var binding: ActivityM3U8ServerBinding
     private lateinit var adapter: ChannelAdapter
-    private lateinit var channelList: MutableList<Channel>
     private lateinit var databaseReference: DatabaseReference
-    private lateinit var lottieAnimationViewServerDown: LottieAnimationView
     private var selectedCategory: String? = null
-    private lateinit var loadingLayout: View
-    private var originalList = mutableListOf<Channel>()
+    private var valueEventListener: ValueEventListener? = null
+    
+    // Use StateFlow for search query to enable debouncing
+    private val searchQueryFlow = MutableStateFlow("")
+    
+    // Use immutable list for better state management
+    private val channelList = mutableListOf<Channel>()
+    private val originalList = mutableListOf<Channel>()
+    
+    // Coroutine job for search to enable cancellation
+    private var searchJob: Job? = null
+    
+    // Reference to loading layout
+    private lateinit var loadingLayoutView: View
+
+    companion object {
+        private const val GRID_SPAN_COUNT = 3
+        private const val CATEGORY_KEY = "category"
+        private const val SEARCH_DEBOUNCE_MS = 300L
+        private const val GRID_SPACING_DP = 8
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_m3_u8_server)
+        binding = ActivityM3U8ServerBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
-        // Initialize views
-        val toolbar = findViewById<Toolbar>(R.id.toolbar)
-        setSupportActionBar(toolbar)
+        // Find loading layout view
+        loadingLayoutView = findViewById(R.id.loadingLayout)
+
+        initializeViews()
+        setupRecyclerView()
+        setupSearchListener()
+        setupFirebase()
+        setupStatusBar()
+    }
+
+    private fun initializeViews() {
+        // Setup toolbar
+        setSupportActionBar(binding.toolbar)
         supportActionBar?.apply {
             setDisplayHomeAsUpEnabled(true)
             setDisplayShowHomeEnabled(true)
         }
 
         // Get selected category from intent
-        selectedCategory = intent.getStringExtra("category")
-        
-        // Update title
+        selectedCategory = intent.getStringExtra(CATEGORY_KEY)
         supportActionBar?.title = selectedCategory
 
-        // Initialize RecyclerView with GridLayoutManager
-        recyclerView = findViewById(R.id.recyclerView)
-        recyclerView.layoutManager = GridLayoutManager(this, 3) // 3 columns
-        
-        // Add item decoration for grid spacing
-        recyclerView.addItemDecoration(object : ItemDecoration() {
-            override fun getItemOffsets(
-                outRect: Rect,
-                view: View,
-                parent: RecyclerView,
-                state: RecyclerView.State
-            ) {
-                val spacing = resources.getDimensionPixelSize(R.dimen.grid_spacing)
-                outRect.left = spacing
-                outRect.right = spacing
-                outRect.top = spacing
-                outRect.bottom = spacing
-            }
-        })
-
-        // Initialize other views
-        lottieAnimationViewServerDown = findViewById(R.id.lottieAnimationViewServerDown)
-        loadingLayout = findViewById(R.id.loadingLayout)
-
-        // Initialize list and adapter
-        channelList = ArrayList()
-        adapter = ChannelAdapter(channelList, this)
-        recyclerView.adapter = adapter
-
         // Set background color
-        window.decorView.setBackgroundColor(resources.getColor(R.color.Red_light))
+        window.decorView.setBackgroundColor(ContextCompat.getColor(this, R.color.Red_light))
+    }
 
-        // Initialize Firebase
-        databaseReference = FirebaseDatabase.getInstance().getReference("channels")
+    private fun setupRecyclerView() {
+        // Use fixed span count of 3 as shown in the screenshot
+        val spanCount = GRID_SPAN_COUNT
         
-        // Fetch data
-        fetchChannels()
+        // Get spacing dimension
+        val spacing = resources.getDimensionPixelSize(R.dimen.grid_spacing)
+        
+        // Use GridLayoutManager with efficient configuration
+        val layoutManager = GridLayoutManager(this, spanCount).apply {
+            // Optimize span lookup
+            spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
+                override fun getSpanSize(position: Int): Int = 1
+            }
+        }
+        
+        binding.recyclerView.apply {
+            this.layoutManager = layoutManager
+            // Optimize RecyclerView performance
+            setHasFixedSize(true)
+            itemAnimator = DefaultItemAnimator()
+            // Remove padding from RecyclerView since we're handling it in decoration
+            setPadding(spacing / 2, spacing / 2, spacing / 2, spacing / 2)
+            // Add item decoration for grid spacing
+            addItemDecoration(GridSpacingItemDecoration())
+        }
 
-        // Set status bar color
+        // Initialize adapter with efficient update strategy
+        adapter = ChannelAdapter(channelList, this)
+        binding.recyclerView.adapter = adapter
+    }
+    
+    private fun setupSearchListener() {
+        // Setup debounced search using Flow
+        lifecycleScope.launch {
+            searchQueryFlow
+                .debounce(SEARCH_DEBOUNCE_MS)
+                .distinctUntilChanged()
+                .flowOn(Dispatchers.Default)
+                .collect { query ->
+                    filterChannels(query)
+                }
+        }
+    }
+
+    private fun setupFirebase() {
+        // Initialize Firebase with optimized reference
+        databaseReference = FirebaseDatabase.getInstance().reference.child("channels")
+        
+        // Enable disk persistence for offline capability if not already enabled
+        try {
+            FirebaseDatabase.getInstance().setPersistenceEnabled(true)
+        } catch (e: Exception) {
+            // Already enabled, ignore
+        }
+        
+        // Keep synced for offline access
+        databaseReference.keepSynced(true)
+        
+        // Fetch data if network is available
+        if (isNetworkAvailable()) {
+            fetchChannels()
+        } else {
+            showError(getString(R.string.no_internet_connection))
+        }
+    }
+
+    private fun setupStatusBar() {
         window.apply {
             clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
             addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
-            statusBarColor = resources.getColor(R.color.Red)
+            statusBarColor = ContextCompat.getColor(this@M3U8ServerActivity, R.color.Red)
+        }
+    }
+
+    private inner class GridSpacingItemDecoration : RecyclerView.ItemDecoration() {
+        private val spacing = resources.getDimensionPixelSize(R.dimen.grid_spacing)
+        
+        override fun getItemOffsets(
+            outRect: Rect,
+            view: View,
+            parent: RecyclerView,
+            state: RecyclerView.State
+        ) {
+            val position = parent.getChildAdapterPosition(view)
+            if (position < 0) return // Invalid position
+            
+            val column = position % GRID_SPAN_COUNT
+            
+            // Apply equal spacing to all items
+            // We use half spacing for left/right edges to ensure consistent visual spacing
+            outRect.left = spacing / 2
+            outRect.right = spacing / 2
+            outRect.top = spacing / 2
+            outRect.bottom = spacing / 2
         }
     }
 
     private fun showLoading() {
-        loadingLayout.visibility = View.VISIBLE
-        recyclerView.visibility = View.GONE
+        loadingLayoutView.isVisible = true
+        binding.recyclerView.isVisible = false
+        binding.lottieAnimationViewServerDown.isVisible = false
     }
 
     private fun hideLoading() {
-        loadingLayout.visibility = View.GONE
-        recyclerView.visibility = View.VISIBLE
+        loadingLayoutView.isVisible = false
+        binding.recyclerView.isVisible = true
     }
 
     private fun showError(message: String) {
         AlertDialog.Builder(this)
-            .setTitle("Error")
+            .setTitle(getString(R.string.error_title))
             .setMessage(message)
-            .setPositiveButton("Retry") { _, _ -> fetchChannels() }
-            .setNegativeButton("Cancel") { _, _ -> finish() }
+            .setPositiveButton(getString(R.string.retry)) { _, _ -> fetchChannels() }
+            .setNegativeButton(getString(R.string.cancel)) { _, _ -> finish() }
+            .setCancelable(false)
             .show()
     }
 
     private fun fetchChannels() {
-        if (!isNetworkAvailable()) {
-            showError("No internet connection")
-            return
-        }
-
         showLoading()
-        databaseReference.addValueEventListener(object : ValueEventListener {
+        
+        // Remove previous listener if exists to prevent memory leaks
+        valueEventListener?.let { databaseReference.removeEventListener(it) }
+        
+        valueEventListener = object : ValueEventListener {
             override fun onDataChange(dataSnapshot: DataSnapshot) {
-                try {
-                    channelList.clear()
-                    originalList.clear()
-                    for (postSnapshot in dataSnapshot.children) {
-                        postSnapshot.getValue(Channel::class.java)?.let { channel ->
-                            if (channel.category.equals(selectedCategory, ignoreCase = true)) {
-                                originalList.add(channel)
+                lifecycleScope.launch(Dispatchers.IO) {
+                    try {
+                        val tempList = mutableListOf<Channel>()
+                        
+                        // Process data in background thread
+                        for (postSnapshot in dataSnapshot.children) {
+                            postSnapshot.getValue(Channel::class.java)?.let { channel ->
+                                if (channel.category.equals(selectedCategory, ignoreCase = true)) {
+                                    tempList.add(channel)
+                                }
                             }
                         }
+                        
+                        // Sort by name
+                        tempList.sortBy { it.name }
+                        
+                        // Update UI on main thread
+                        withContext(Dispatchers.Main) {
+                            updateChannelList(tempList)
+                        }
+                    } catch (e: Exception) {
+                        withContext(Dispatchers.Main) {
+                            hideLoading()
+                            showError(getString(R.string.error_loading_channels_with_message, e.message))
+                        }
                     }
-
-                    originalList.sortBy { it.name }
-                    channelList.addAll(originalList)
-                    adapter.notifyDataSetChanged()
-                    
-                    hideLoading()
-                    checkDataAvailability()
-                } catch (e: Exception) {
-                    hideLoading()
-                    showError("Error loading channels: ${e.message}")
                 }
             }
 
             override fun onCancelled(databaseError: DatabaseError) {
                 hideLoading()
-                showError("Database error: ${databaseError.message}")
+                showError(getString(R.string.database_error, databaseError.message))
             }
-        })
+        }
+        
+        // Add the listener
+        valueEventListener?.let { databaseReference.addValueEventListener(it) }
+    }
+    
+    private fun updateChannelList(newList: List<Channel>) {
+        // Calculate diff to optimize RecyclerView updates
+        val diffCallback = object : DiffUtil.Callback() {
+            override fun getOldListSize(): Int = channelList.size
+            override fun getNewListSize(): Int = newList.size
+            
+            override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
+                return channelList[oldItemPosition].id == newList[newItemPosition].id
+            }
+            
+            override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
+                return channelList[oldItemPosition] == newList[newItemPosition]
+            }
+        }
+        
+        val diffResult = DiffUtil.calculateDiff(diffCallback)
+        
+        // Update data
+        originalList.clear()
+        originalList.addAll(newList)
+        
+        channelList.clear()
+        channelList.addAll(newList)
+        
+        // Apply changes
+        diffResult.dispatchUpdatesTo(adapter)
+        
+        hideLoading()
+        checkDataAvailability()
     }
 
     private fun checkDataAvailability() {
         if (channelList.isEmpty()) {
-            recyclerView.visibility = View.GONE
+            binding.recyclerView.isVisible = false
             showServerDownAnimation()
-//            showEmptyMessage()
         } else {
-            recyclerView.visibility = View.VISIBLE
+            binding.recyclerView.isVisible = true
             hideServerDownAnimation()
-            hideEmptyMessage()
         }
     }
 
     private fun showServerDownAnimation() {
-        lottieAnimationViewServerDown.visibility = View.VISIBLE
-        lottieAnimationViewServerDown.playAnimation()
+        binding.lottieAnimationViewServerDown.apply {
+            isVisible = true
+            playAnimation()
+        }
     }
 
     private fun hideServerDownAnimation() {
-        lottieAnimationViewServerDown.visibility = View.GONE
-        lottieAnimationViewServerDown.cancelAnimation()
+        binding.lottieAnimationViewServerDown.apply {
+            isVisible = false
+            cancelAnimation()
+        }
     }
 
     private fun isNetworkAvailable(): Boolean {
         val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        val network = connectivityManager.activeNetwork
-        val capabilities = connectivityManager.getNetworkCapabilities(network)
-        return capabilities != null && (
-            capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) ||
-            capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)
-        )
+        val network = connectivityManager.activeNetwork ?: return false
+        val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
+        
+        return capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) ||
+               capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) ||
+               capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -199,17 +332,18 @@ class M3U8ServerActivity : AppCompatActivity() {
         }
     }
 
-    override fun onBackPressed() {
-        super.onBackPressed()
-        // Optionally, you can add an animation or specific behavior on back press
-    }
-
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.search_menu, menu)
         
         val searchItem = menu.findItem(R.id.action_search)
-        val searchView = searchItem.actionView as androidx.appcompat.widget.SearchView
-
+        val searchView = searchItem.actionView as SearchView
+        
+        setupSearchView(searchView)
+        
+        return true
+    }
+    
+    private fun setupSearchView(searchView: SearchView) {
         // Style the SearchView
         val searchIcon = searchView.findViewById<ImageView>(androidx.appcompat.R.id.search_mag_icon)
         searchIcon.setColorFilter(Color.WHITE, PorterDuff.Mode.SRC_IN)
@@ -221,48 +355,58 @@ class M3U8ServerActivity : AppCompatActivity() {
         searchText.setTextColor(Color.WHITE)
         searchText.setHintTextColor(Color.WHITE)
         
+        // Set query listener
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean {
                 return false
             }
 
             override fun onQueryTextChange(newText: String?): Boolean {
-                filterChannels(newText)
+                // Update search query flow
+                searchQueryFlow.value = newText ?: ""
                 return true
             }
         })
-        
-        return true
     }
 
-    private fun filterChannels(query: String?) {
-        if (query.isNullOrBlank()) {
-            channelList.clear()
-            channelList.addAll(originalList)
-        } else {
-            val filteredList = originalList.filter {
-                it.name.contains(query, ignoreCase = true) ||
-                it.category.contains(query, ignoreCase = true)
+    private fun filterChannels(query: String) {
+        // Cancel previous search job if exists
+        searchJob?.cancel()
+        
+        searchJob = lifecycleScope.launch(Dispatchers.Default) {
+            val filteredList = if (query.isBlank()) {
+                originalList.toList()
+            } else {
+                originalList.filter {
+                    it.name.contains(query, ignoreCase = true) ||
+                    it.category.contains(query, ignoreCase = true)
+                }
             }
-            channelList.clear()
-            channelList.addAll(filteredList)
+            
+            withContext(Dispatchers.Main) {
+                updateChannelList(filteredList)
+            }
         }
-        adapter.notifyDataSetChanged()
-        checkDataAvailability()
     }
 
     private fun showEmptyMessage() {
-        val message = "No channels found for $selectedCategory"
+        val message = getString(R.string.no_channels_found, selectedCategory)
         AlertDialog.Builder(this)
-            .setTitle("No Results")
+            .setTitle(getString(R.string.no_results))
             .setMessage(message)
-            .setPositiveButton("Retry") { _, _ -> fetchChannels() }
-            .setNegativeButton("Back") { _, _ -> finish() }
+            .setPositiveButton(getString(R.string.retry)) { _, _ -> fetchChannels() }
+            .setNegativeButton(getString(R.string.back)) { _, _ -> finish() }
             .setCancelable(false)
             .show()
     }
-
-    private fun hideEmptyMessage() {
-        // No need to do anything here, dialog will be auto-dismissed
+    
+    override fun onDestroy() {
+        super.onDestroy()
+        // Clean up resources and listeners
+        valueEventListener?.let { databaseReference.removeEventListener(it) }
+        binding.lottieAnimationViewServerDown.cancelAnimation()
+        
+        // Cancel all coroutines
+        searchJob?.cancel()
     }
 }

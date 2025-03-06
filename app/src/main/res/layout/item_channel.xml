@@ -24,7 +24,7 @@
 
             <ImageView
                 android:id="@+id/ivPlay"
-                android:layout_width="80dp"
+                android:layout_width="90dp"
                 android:layout_height="80dp"
                 android:scaleType="fitCenter"
                 android:contentDescription="Channel logo"
@@ -39,9 +39,9 @@
                 android:textColor="#757575"
                 android:textSize="14sp"
                 android:fontFamily="sans-serif"
-                android:maxLines="1"
+                android:maxLines="2"
                 android:ellipsize="end"
-                tools:text="SSC News"/>
+                tools:text="Demo HD Plus"/>
 
             <TextView
                 android:id="@+id/tvChannelCategory"

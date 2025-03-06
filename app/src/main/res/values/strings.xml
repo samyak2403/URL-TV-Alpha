@@ -17,6 +17,15 @@
     <string name="error_updating_channel">Error updating channel</string>
     <string name="error_deleting_channel">Error deleting channel</string>
     <string name="error_playback">Error playing video</string>
+    <!-- Additional error messages for M3U8ServerActivity -->
+    <string name="no_internet_connection">No internet connection</string>
+    <string name="error_title">Error</string>
+    <string name="retry">Retry</string>
+    <string name="back">Back</string>
+    <string name="database_error">Database error: %s</string>
+    <string name="error_loading_channels_with_message">Error loading channels: %s</string>
+    <string name="no_results">No Results</string>
+    <string name="no_channels_found">No channels found for %s</string>
 
     <!-- Success Messages -->
     <string name="success_channel_saved">Channel saved successfully</string>

@@ -2,7 +2,6 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
-    <dimen name="grid_spacing">4dp</dimen>
     <color name="button_text_color">#FFFFFF</color>
     <color name="text_color">#000000</color>
     <color name="yellow">#FFC107</color>
