@@ -35,6 +35,13 @@ import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import com.samyak.urltvalpha.models.Category
 import android.content.res.ColorStateList
+import androidx.recyclerview.widget.DividerItemDecoration
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MainActivity : AppCompatActivity() {
 
@@ -45,6 +52,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var drawerLayout: DrawerLayout
     private val categoryList = mutableListOf<Category>()
     private var originalList = mutableListOf<Category>()
+    
+    // Add coroutine scope for background operations
+    private val coroutineScope = CoroutineScope(Dispatchers.Main + Job())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -74,10 +84,21 @@ class MainActivity : AppCompatActivity() {
 
         // Initialize Firebase
         databaseReference = FirebaseDatabase.getInstance().getReference("categories")
-        
+
         // Setup adapter
         categoryAdapter = CategoryAdapter(categoryList, this)
         recyclerView.adapter = categoryAdapter
+
+        // Optimize RecyclerView
+        recyclerView.apply {
+            setHasFixedSize(true)
+            itemAnimator = null // Disable animations for better performance
+            layoutManager = LinearLayoutManager(this@MainActivity)
+            addItemDecoration(DividerItemDecoration(context, DividerItemDecoration.VERTICAL))
+            
+            // Add ViewHolder pooling
+            recycledViewPool.setMaxRecycledViews(0, 20)
+        }
 
         // Fetch categories
         fetchCategories()
@@ -93,23 +114,23 @@ class MainActivity : AppCompatActivity() {
     private fun setupNavigationDrawer(toolbar: Toolbar) {
         drawerLayout = findViewById(R.id.drawer_layout)
         val navigationView = findViewById<NavigationView>(R.id.nav_view)
-        
+
         // Create ActionBarDrawerToggle
         val toggle = ActionBarDrawerToggle(
             this, drawerLayout, toolbar,
             R.string.navigation_drawer_open,
             R.string.navigation_drawer_close
         )
-        
+
         // Set the drawer toggle color to red
         toggle.drawerArrowDrawable.color = resources.getColor(R.color.white)
-        
+
         drawerLayout.addDrawerListener(toggle)
         toggle.syncState()
-        
+
         // Set navigation view icon tint to red
         navigationView.itemIconTintList = ColorStateList.valueOf(resources.getColor(R.color.Red))
-        
+
         // Handle navigation item clicks
         navigationView.setNavigationItemSelectedListener { menuItem ->
             drawerLayout.closeDrawer(GravityCompat.START)
@@ -198,7 +219,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.search_menu, menu)
-        
+
         val searchItem = menu.findItem(R.id.action_search)
         val searchView = searchItem.actionView as androidx.appcompat.widget.SearchView
 
@@ -212,7 +233,7 @@ class MainActivity : AppCompatActivity() {
         val searchText = searchView.findViewById<EditText>(androidx.appcompat.R.id.search_src_text)
         searchText.setTextColor(Color.WHITE)
         searchText.setHintTextColor(Color.WHITE)
-        
+
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean {
                 return false
@@ -223,7 +244,7 @@ class MainActivity : AppCompatActivity() {
                 return true
             }
         })
-        
+
         return true
     }
 
@@ -247,49 +268,66 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun filterCategories(query: String?) {
-        if (query.isNullOrBlank()) {
-            categoryList.clear()
-            categoryList.addAll(originalList)
-        } else {
-            val filteredList = originalList.filter {
-                it.name.contains(query, ignoreCase = true)
+        coroutineScope.launch(Dispatchers.Default) {
+            val filteredList = if (query.isNullOrBlank()) {
+                originalList.toList()
+            } else {
+                originalList.filter {
+                    it.name.contains(query, ignoreCase = true)
+                }
             }
-            categoryList.clear()
-            categoryList.addAll(filteredList)
+            
+            withContext(Dispatchers.Main) {
+                categoryList.clear()
+                categoryList.addAll(filteredList)
+                categoryAdapter.notifyDataSetChanged()
+            }
         }
-        categoryAdapter.notifyDataSetChanged()
     }
 
     private fun fetchCategories() {
         showLoading()
-        databaseReference.addValueEventListener(object : ValueEventListener {
+        
+        // Add keepSynced for offline capability
+        databaseReference.keepSynced(true)
+        
+        // Optimize query to fetch only needed fields
+        databaseReference.orderByChild("name")
+            .addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                try {
-                    categoryList.clear()
-                    originalList.clear()
-                    val uniqueCategories = mutableSetOf<Category>()
+                coroutineScope.launch(Dispatchers.Default) {
+                    try {
+                        val newCategories = mutableListOf<Category>()
+                        val uniqueCategories = mutableSetOf<Category>()
 
-                    for (categorySnapshot in snapshot.children) {
-                        val category = categorySnapshot.getValue(Category::class.java)
-                        category?.let {
-                            if (!uniqueCategories.contains(it)) {
-                                uniqueCategories.add(it)
-                                originalList.add(it)
+                        for (categorySnapshot in snapshot.children) {
+                            val category = categorySnapshot.getValue(Category::class.java)
+                            category?.let {
+                                if (!uniqueCategories.contains(it)) {
+                                    uniqueCategories.add(it)
+                                    newCategories.add(it)
+                                }
                             }
                         }
-                    }
 
-                    if (originalList.isEmpty()) {
-                        showError("No categories found")
-                    } else {
-                        originalList.sortBy { it.name }
-                        categoryList.addAll(originalList)
-                        categoryAdapter.notifyDataSetChanged()
+                        withContext(Dispatchers.Main) {
+                            if (newCategories.isEmpty()) {
+                                showError("No categories found")
+                            } else {
+                                originalList.clear()
+                                categoryList.clear()
+                                originalList.addAll(newCategories)
+                                categoryList.addAll(newCategories)
+                                categoryAdapter.notifyDataSetChanged()
+                            }
+                            hideLoading()
+                        }
+                    } catch (e: Exception) {
+                        withContext(Dispatchers.Main) {
+                            hideLoading()
+                            showError("Error loading categories: ${e.message}")
+                        }
                     }
-                } catch (e: Exception) {
-                    showError("Error loading categories: ${e.message}")
-                } finally {
-                    hideLoading()
                 }
             }
 
@@ -306,16 +344,21 @@ class MainActivity : AppCompatActivity() {
         val network = connectivityManager.activeNetwork
         val capabilities = connectivityManager.getNetworkCapabilities(network)
         return capabilities != null && (
-            capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) ||
-            capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)
-        )
+                capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) ||
+                        capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)
+                )
     }
-    
+
     override fun onBackPressed() {
         if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
             drawerLayout.closeDrawer(GravityCompat.START)
         } else {
             super.onBackPressed()
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        coroutineScope.cancel()
     }
 }
