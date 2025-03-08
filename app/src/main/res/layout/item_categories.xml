@@ -17,6 +17,6 @@
         android:textColor="#C41E3A"
         android:textSize="20sp"
         android:textStyle="bold"
-        android:textAllCaps="true"/>
+        android:textAllCaps="false"/>
 
 </androidx.cardview.widget.CardView>
