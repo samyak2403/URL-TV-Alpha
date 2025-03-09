@@ -26,6 +26,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.firebase.database.*
 import com.samyak.urltvalpha.databinding.ActivityM3U8ServerBinding
 import com.samyak.urltvalpha.models.Channel
+import com.samyak.urltvalpha.utils.ToolbarUtils
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.debounce
@@ -77,16 +78,16 @@ class M3U8ServerActivity : AppCompatActivity() {
     }
 
     private fun initializeViews() {
-        // Setup toolbar
-        setSupportActionBar(binding.toolbar)
-        supportActionBar?.apply {
-            setDisplayHomeAsUpEnabled(true)
-            setDisplayShowHomeEnabled(true)
-        }
-
         // Get selected category from intent
         selectedCategory = intent.getStringExtra(CATEGORY_KEY)
-        supportActionBar?.title = selectedCategory
+        
+        // Setup toolbar with centered title
+        ToolbarUtils.setupCenteredToolbar(
+            this,
+            binding.toolbar,
+            selectedCategory ?: getString(R.string.app_name),
+            true
+        )
 
         // Set background color
         window.decorView.setBackgroundColor(ContextCompat.getColor(this, R.color.Red_light))

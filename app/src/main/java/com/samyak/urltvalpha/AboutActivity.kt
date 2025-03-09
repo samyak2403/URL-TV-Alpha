@@ -21,6 +21,7 @@ import com.google.android.material.floatingactionbutton.ExtendedFloatingActionBu
 import com.google.android.material.imageview.ShapeableImageView
 import com.google.android.material.snackbar.Snackbar
 import android.widget.TextView
+import com.samyak.urltvalpha.utils.ToolbarUtils
 import java.util.Calendar
 
 class AboutActivity : AppCompatActivity() {
@@ -40,6 +41,7 @@ class AboutActivity : AppCompatActivity() {
     private lateinit var githubButton: MaterialButton
     private lateinit var copyrightText: TextView
     private lateinit var copyrightDivider: View
+    private lateinit var toolbar: Toolbar
     
     // Animation constants
     private companion object {
@@ -82,6 +84,7 @@ class AboutActivity : AppCompatActivity() {
         githubButton = findViewById(R.id.githubButton)
         copyrightText = findViewById(R.id.copyrightText)
         copyrightDivider = findViewById(R.id.copyrightDivider)
+        toolbar = findViewById(R.id.toolbar)
     }
 
     private fun setupUI() {
@@ -115,12 +118,8 @@ class AboutActivity : AppCompatActivity() {
     }
 
     private fun setupToolbar() {
-        val toolbar = findViewById<Toolbar>(R.id.toolbar)
-        setSupportActionBar(toolbar)
-        supportActionBar?.apply {
-            setDisplayHomeAsUpEnabled(true)
-            title = getString(R.string.about)
-        }
+        // Use the utility to setup centered toolbar
+        ToolbarUtils.setupCenteredToolbar(this, toolbar, getString(R.string.about), true)
     }
     
     private fun setupMotionAndFab() {

@@ -36,6 +36,7 @@ import com.google.firebase.database.ValueEventListener
 import com.samyak.urltvalpha.models.Category
 import android.content.res.ColorStateList
 import androidx.recyclerview.widget.DividerItemDecoration
+import com.samyak.urltvalpha.utils.ToolbarUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -50,6 +51,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var databaseReference: DatabaseReference
     private lateinit var loadingLayout: View
     private lateinit var drawerLayout: DrawerLayout
+    private lateinit var toolbar: Toolbar
     private val categoryList = mutableListOf<Category>()
     private var originalList = mutableListOf<Category>()
     
@@ -61,15 +63,8 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         // Setup toolbar
-        val toolbar = findViewById<Toolbar>(R.id.toolbar)
-        setSupportActionBar(toolbar)
-        supportActionBar?.setDisplayShowTitleEnabled(false)
-        val customTitle = TextView(this)
-        customTitle.text = "URL TV Alpha"
-        customTitle.setTextColor(Color.WHITE)
-        customTitle.textSize = 20f
-        customTitle.typeface = Typeface.DEFAULT_BOLD
-        toolbar.addView(customTitle)
+        toolbar = findViewById(R.id.toolbar)
+        ToolbarUtils.setupCenteredToolbar(this, toolbar, getString(R.string.app_name), false)
 
         // Setup drawer layout
         setupNavigationDrawer(toolbar)
