@@ -153,4 +153,10 @@
     <string name="developer_avatar">Developer Avatar</string>
     <string name="copyright_text">© 2025 URL TV Alpha. All rights reserved.</string>
 
+    <string name="search_icon">Search Icon</string>
+    <string name="clear_search">Clear Search</string>
+    <string name="search_hint">Search channels...</string>
+    <string name="no_search_results">No results found for \"%s\"</string>
+    <string name="search_activity_title">Search</string>
+
 </resources>
