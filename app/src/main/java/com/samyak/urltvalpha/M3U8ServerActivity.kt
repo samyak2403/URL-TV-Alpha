@@ -1,8 +1,7 @@
 package com.samyak.urltvalpha
 
 import android.content.Context
-import android.graphics.Color
-import android.graphics.PorterDuff
+import android.content.Intent
 import android.graphics.Rect
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
@@ -11,11 +10,8 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.view.WindowManager
-import android.widget.EditText
-import android.widget.ImageView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.SearchView
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
@@ -28,11 +24,6 @@ import com.samyak.urltvalpha.databinding.ActivityM3U8ServerBinding
 import com.samyak.urltvalpha.models.Channel
 import com.samyak.urltvalpha.utils.ToolbarUtils
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.debounce
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.flowOn
-import java.util.concurrent.TimeUnit
 
 class M3U8ServerActivity : AppCompatActivity() {
 
@@ -42,15 +33,9 @@ class M3U8ServerActivity : AppCompatActivity() {
     private var selectedCategory: String? = null
     private var valueEventListener: ValueEventListener? = null
     
-    // Use StateFlow for search query to enable debouncing
-    private val searchQueryFlow = MutableStateFlow("")
-    
     // Use immutable list for better state management
     private val channelList = mutableListOf<Channel>()
     private val originalList = mutableListOf<Channel>()
-    
-    // Coroutine job for search to enable cancellation
-    private var searchJob: Job? = null
     
     // Reference to loading layout
     private lateinit var loadingLayoutView: View
@@ -58,7 +43,6 @@ class M3U8ServerActivity : AppCompatActivity() {
     companion object {
         private const val GRID_SPAN_COUNT = 3
         private const val CATEGORY_KEY = "category"
-        private const val SEARCH_DEBOUNCE_MS = 300L
         private const val GRID_SPACING_DP = 8
     }
 
@@ -72,7 +56,6 @@ class M3U8ServerActivity : AppCompatActivity() {
 
         initializeViews()
         setupRecyclerView()
-        setupSearchListener()
         setupFirebase()
         setupStatusBar()
     }
@@ -90,7 +73,7 @@ class M3U8ServerActivity : AppCompatActivity() {
         )
 
         // Set background color
-        window.decorView.setBackgroundColor(ContextCompat.getColor(this, R.color.Red_light))
+        window.decorView.setBackgroundColor(ContextCompat.getColor(this, R.color.col_blue_2))
     }
 
     private fun setupRecyclerView() {
@@ -125,19 +108,6 @@ class M3U8ServerActivity : AppCompatActivity() {
         binding.recyclerView.adapter = adapter
     }
     
-    private fun setupSearchListener() {
-        // Setup debounced search using Flow
-        lifecycleScope.launch {
-            searchQueryFlow
-                .debounce(SEARCH_DEBOUNCE_MS)
-                .distinctUntilChanged()
-                .flowOn(Dispatchers.Default)
-                .collect { query ->
-                    filterChannels(query)
-                }
-        }
-    }
-
     private fun setupFirebase() {
         // Initialize Firebase with optimized reference
         databaseReference = FirebaseDatabase.getInstance().reference.child("channels")
@@ -164,7 +134,7 @@ class M3U8ServerActivity : AppCompatActivity() {
         window.apply {
             clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
             addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
-            statusBarColor = ContextCompat.getColor(this@M3U8ServerActivity, R.color.Red)
+            statusBarColor = ContextCompat.getColor(this@M3U8ServerActivity, R.color.col_blue_header)
         }
     }
 
@@ -326,76 +296,19 @@ class M3U8ServerActivity : AppCompatActivity() {
                 onBackPressed()
                 true
             }
+            R.id.action_search_activity -> {
+                // Launch the SearchActivity
+                val intent = Intent(this, SearchActivity::class.java)
+                startActivity(intent)
+                true
+            }
             else -> super.onOptionsItemSelected(item)
         }
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.search_menu, menu)
-        
-        val searchItem = menu.findItem(R.id.action_search)
-        val searchView = searchItem.actionView as SearchView
-        
-        setupSearchView(searchView)
-        
         return true
-    }
-    
-    private fun setupSearchView(searchView: SearchView) {
-        // Style the SearchView
-        val searchIcon = searchView.findViewById<ImageView>(androidx.appcompat.R.id.search_mag_icon)
-        searchIcon.setColorFilter(Color.WHITE, PorterDuff.Mode.SRC_IN)
-
-        val closeIcon = searchView.findViewById<ImageView>(androidx.appcompat.R.id.search_close_btn)
-        closeIcon.setColorFilter(Color.WHITE, PorterDuff.Mode.SRC_IN)
-
-        val searchText = searchView.findViewById<EditText>(androidx.appcompat.R.id.search_src_text)
-        searchText.setTextColor(Color.WHITE)
-        searchText.setHintTextColor(Color.WHITE)
-        
-        // Set query listener
-        searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
-            override fun onQueryTextSubmit(query: String?): Boolean {
-                return false
-            }
-
-            override fun onQueryTextChange(newText: String?): Boolean {
-                // Update search query flow
-                searchQueryFlow.value = newText ?: ""
-                return true
-            }
-        })
-    }
-
-    private fun filterChannels(query: String) {
-        // Cancel previous search job if exists
-        searchJob?.cancel()
-        
-        searchJob = lifecycleScope.launch(Dispatchers.Default) {
-            val filteredList = if (query.isBlank()) {
-                originalList.toList()
-            } else {
-                originalList.filter {
-                    it.name.contains(query, ignoreCase = true) ||
-                    it.category.contains(query, ignoreCase = true)
-                }
-            }
-            
-            withContext(Dispatchers.Main) {
-                updateChannelList(filteredList)
-            }
-        }
-    }
-
-    private fun showEmptyMessage() {
-        val message = getString(R.string.no_channels_found, selectedCategory)
-        AlertDialog.Builder(this)
-            .setTitle(getString(R.string.no_results))
-            .setMessage(message)
-            .setPositiveButton(getString(R.string.retry)) { _, _ -> fetchChannels() }
-            .setNegativeButton(getString(R.string.back)) { _, _ -> finish() }
-            .setCancelable(false)
-            .show()
     }
     
     override fun onDestroy() {
@@ -403,8 +316,5 @@ class M3U8ServerActivity : AppCompatActivity() {
         // Clean up resources and listeners
         valueEventListener?.let { databaseReference.removeEventListener(it) }
         binding.lottieAnimationViewServerDown.cancelAnimation()
-        
-        // Cancel all coroutines
-        searchJob?.cancel()
     }
 }

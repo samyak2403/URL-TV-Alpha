@@ -13,7 +13,7 @@
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            android:background="@color/Red"
+            android:background="@color/col_blue_header"
             android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
             app:titleTextColor="@android:color/white"/>
 
@@ -23,7 +23,7 @@
             android:layout_height="match_parent"
             android:clipToPadding="false"
             android:scrollbars="vertical"
-            android:background="@color/Red_light"/>
+            android:background="@color/col_blue_2"/>
 
     </LinearLayout>
 

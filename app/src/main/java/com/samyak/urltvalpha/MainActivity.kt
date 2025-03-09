@@ -7,7 +7,9 @@ import android.graphics.Color
 import android.graphics.PorterDuff
 import android.graphics.Typeface
 import android.net.ConnectivityManager
+import android.net.Network
 import android.net.NetworkCapabilities
+import android.net.NetworkRequest
 import android.net.Uri
 import android.os.Bundle
 import android.view.Menu
@@ -37,6 +39,7 @@ import com.google.firebase.database.ValueEventListener
 import com.samyak.urltvalpha.models.Category
 import android.content.res.ColorStateList
 import androidx.recyclerview.widget.DividerItemDecoration
+import com.samyak.urltvalpha.utils.LinkUtils
 import com.samyak.urltvalpha.utils.ToolbarUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -44,6 +47,10 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import android.text.SpannableString
+import android.text.style.ForegroundColorSpan
+import android.os.Handler
+import android.os.Looper
 
 class MainActivity : AppCompatActivity() {
 
@@ -58,6 +65,11 @@ class MainActivity : AppCompatActivity() {
     
     // Add coroutine scope for background operations
     private val coroutineScope = CoroutineScope(Dispatchers.Main + Job())
+    
+    // Network callback
+    private lateinit var connectivityManager: ConnectivityManager
+    private lateinit var networkCallback: ConnectivityManager.NetworkCallback
+    private var isNetworkCallbackRegistered = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -76,7 +88,7 @@ class MainActivity : AppCompatActivity() {
         recyclerView.layoutManager = LinearLayoutManager(this)
 
         // Set background color
-        window.decorView.setBackgroundColor(resources.getColor(R.color.Red_light))
+        window.decorView.setBackgroundColor(resources.getColor(R.color.col_blue_2))
 
         // Initialize Firebase
         databaseReference = FirebaseDatabase.getInstance().getReference("categories")
@@ -96,6 +108,15 @@ class MainActivity : AppCompatActivity() {
             recycledViewPool.setMaxRecycledViews(0, 20)
         }
 
+        // Initialize connectivity manager
+        connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        
+        // Register network callback
+        registerNetworkCallback()
+        
+        // Check network connectivity
+        checkNetworkConnectivity()
+
         // Fetch categories
         fetchCategories()
 
@@ -103,7 +124,7 @@ class MainActivity : AppCompatActivity() {
         window.apply {
             clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
             addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
-            statusBarColor = resources.getColor(R.color.Red)
+            statusBarColor = resources.getColor(R.color.col_blue_header)
         }
     }
 
@@ -121,33 +142,104 @@ class MainActivity : AppCompatActivity() {
         // Set the drawer toggle color to red
         toggle.drawerArrowDrawable.color = resources.getColor(R.color.white)
 
+        // Add animation to drawer opening/closing
+        drawerLayout.addDrawerListener(object : DrawerLayout.DrawerListener {
+            override fun onDrawerSlide(drawerView: View, slideOffset: Float) {
+                // Scale the main content when drawer is opened
+                val slideX = drawerView.width * slideOffset
+                findViewById<View>(R.id.app_bar_layout).translationX = slideX / 2
+            }
+
+            override fun onDrawerOpened(drawerView: View) {
+                // Animate the logo when drawer is fully opened
+                val logo = drawerView.findViewById<ImageView>(R.id.imageView)
+                logo?.let {
+                    it.animate()
+                        .scaleX(1.1f)
+                        .scaleY(1.1f)
+                        .setDuration(200)
+                        .start()
+                }
+            }
+
+            override fun onDrawerClosed(drawerView: View) {
+                // Reset logo animation when drawer is closed
+                val logo = drawerView.findViewById<ImageView>(R.id.imageView)
+                logo?.let {
+                    it.animate()
+                        .scaleX(1.0f)
+                        .scaleY(1.0f)
+                        .setDuration(200)
+                        .start()
+                }
+            }
+
+            override fun onDrawerStateChanged(newState: Int) {
+                // Not needed for our animation
+            }
+        })
+
         drawerLayout.addDrawerListener(toggle)
         toggle.syncState()
 
-        // Set navigation view icon tint to red
-        navigationView.itemIconTintList = ColorStateList.valueOf(resources.getColor(R.color.Red))
+        // Set navigation view background color to red
+        navigationView.setBackgroundColor(resources.getColor(R.color.col_blue_2))
+        
+        // Set navigation view text color to white
+        val navigationViewMenu = navigationView.menu
+        for (i in 0 until navigationViewMenu.size()) {
+            val menuItem = navigationViewMenu.getItem(i)
+            val subMenu = menuItem.subMenu
+            if (subMenu != null) {
+                for (j in 0 until subMenu.size()) {
+                    val subMenuItem = subMenu.getItem(j)
+                    subMenuItem.title = SpannableString(subMenuItem.title).apply {
+                        setSpan(ForegroundColorSpan(Color.WHITE), 0, length, 0)
+                    }
+                }
+            }
+            menuItem.title = SpannableString(menuItem.title).apply {
+                setSpan(ForegroundColorSpan(Color.WHITE), 0, length, 0)
+            }
+        }
+
+        // Set navigation view icon tint to white
+        navigationView.itemIconTintList = ColorStateList.valueOf(resources.getColor(R.color.white))
 
         // Handle navigation item clicks
         navigationView.setNavigationItemSelectedListener { menuItem ->
-            drawerLayout.closeDrawer(GravityCompat.START)
+            // Add a small delay to allow for the ripple effect to be visible
+            Handler(Looper.getMainLooper()).postDelayed({
+                drawerLayout.closeDrawer(GravityCompat.START)
+            }, 300)
+            
             when (menuItem.itemId) {
-                R.id.nav_home -> {
-                    // Handle home click
-                    Toast.makeText(this, "Home", Toast.LENGTH_SHORT).show()
+                R.id.nav_contact -> {
+                    contactUs()
                     true
                 }
-                R.id.nav_favorites -> {
-                    // Handle favorites click
-                    Toast.makeText(this, "Favorites", Toast.LENGTH_SHORT).show()
+                R.id.nav_messenger -> {
+                    LinkUtils.openMessenger(this)
                     true
                 }
-                R.id.nav_settings -> {
-                    // Handle settings click
-                    Toast.makeText(this, "Settings", Toast.LENGTH_SHORT).show()
+                R.id.nav_facebook -> {
+                    LinkUtils.openFacebook(this)
                     true
                 }
-                R.id.nav_rate -> {
-                    rateApp()
+                R.id.nav_instagram -> {
+                    LinkUtils.openInstagram(this)
+                    true
+                }
+                R.id.nav_youtube -> {
+                    LinkUtils.openYouTube(this)
+                    true
+                }
+                R.id.nav_twitter -> {
+                    LinkUtils.openTwitter(this)
+                    true
+                }
+                R.id.nav_telegram -> {
+                    LinkUtils.openTelegram(this)
                     true
                 }
                 R.id.nav_share -> {
@@ -158,12 +250,14 @@ class MainActivity : AppCompatActivity() {
                     openPrivacyPolicy()
                     true
                 }
-                R.id.nav_contact -> {
-                    contactUs()
+                R.id.nav_about -> {
+                    // Launch AboutActivity
+                    val intent = Intent(this, AboutActivity::class.java)
+                    startActivity(intent)
                     true
                 }
-                R.id.nav_about -> {
-                    startActivity(Intent(this, AboutActivity::class.java))
+                R.id.nav_linkedin -> {
+                    LinkUtils.openLinkedIn(this)
                     true
                 }
                 else -> false
@@ -173,13 +267,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun rateApp() {
         try {
-            val uri = Uri.parse("market://details?id=$packageName")
+            val uri = Uri.parse(LinkUtils.getMarketUrl(packageName))
             val intent = Intent(Intent.ACTION_VIEW, uri)
             intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY or Intent.FLAG_ACTIVITY_NEW_DOCUMENT or Intent.FLAG_ACTIVITY_MULTIPLE_TASK)
             startActivity(intent)
         } catch (e: ActivityNotFoundException) {
-            val uri = Uri.parse("http://play.google.com/store/apps/details?id=$packageName")
-            startActivity(Intent(Intent.ACTION_VIEW, uri))
+            LinkUtils.openInBrowser(this, LinkUtils.getPlayStoreUrl(packageName))
         }
     }
 
@@ -187,25 +280,19 @@ class MainActivity : AppCompatActivity() {
         val shareIntent = Intent(Intent.ACTION_SEND)
         shareIntent.type = "text/plain"
         shareIntent.putExtra(Intent.EXTRA_SUBJECT, getString(R.string.app_name))
-        val shareMessage = "Check out this app: https://play.google.com/store/apps/details?id=$packageName"
+        val shareMessage = "Check out this app: ${LinkUtils.getPlayStoreUrl(packageName)}"
         shareIntent.putExtra(Intent.EXTRA_TEXT, shareMessage)
         startActivity(Intent.createChooser(shareIntent, getString(R.string.share_message)))
     }
 
     private fun openPrivacyPolicy() {
-        try {
-            val intent = Intent(Intent.ACTION_VIEW)
-            intent.data = Uri.parse("https://yourprivacypolicyurl.com")
-            startActivity(intent)
-        } catch (e: Exception) {
-            Toast.makeText(this, getString(R.string.error_privacy_policy), Toast.LENGTH_SHORT).show()
-        }
+        LinkUtils.openInBrowser(this, LinkUtils.PRIVACY_POLICY_URL)
     }
 
     private fun contactUs() {
         try {
             val intent = Intent(Intent.ACTION_SENDTO)
-            intent.data = Uri.parse("mailto:your-email@example.com")
+            intent.data = Uri.parse(LinkUtils.getMailtoUrl())
             intent.putExtra(Intent.EXTRA_SUBJECT, getString(R.string.email_subject))
             startActivity(intent)
         } catch (e: Exception) {
@@ -221,6 +308,14 @@ class MainActivity : AppCompatActivity() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.action_search_activity -> {
+                // Check network connectivity before launching SearchActivity
+                if (!isNetworkAvailable()) {
+                    Toast.makeText(
+                        this,
+                        "No internet connection. Search may not work properly.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
                 // Launch the SearchActivity
                 val intent = Intent(this, SearchActivity::class.java)
                 startActivity(intent)
@@ -273,6 +368,13 @@ class MainActivity : AppCompatActivity() {
 
     private fun fetchCategories() {
         showLoading()
+        
+        // Check for network connectivity
+        if (!isNetworkAvailable()) {
+            hideLoading()
+            showError("No internet connection. Please check your network settings and try again.")
+            return
+        }
         
         // Add keepSynced for offline capability
         databaseReference.keepSynced(true)
@@ -338,6 +440,73 @@ class MainActivity : AppCompatActivity() {
                 )
     }
 
+    private fun checkNetworkConnectivity() {
+        if (!isNetworkAvailable()) {
+            // Show a toast message
+            Toast.makeText(
+                this,
+                "No internet connection. Some features may not work properly.",
+                Toast.LENGTH_LONG
+            ).show()
+            
+            // You could also use a Snackbar for a more modern UI
+            // Snackbar.make(findViewById(android.R.id.content), 
+            //     "No internet connection. Some features may not work properly.", 
+            //     Snackbar.LENGTH_LONG).show()
+        }
+    }
+
+    private fun registerNetworkCallback() {
+        if (isNetworkCallbackRegistered) return
+        
+        networkCallback = object : ConnectivityManager.NetworkCallback() {
+            override fun onAvailable(network: Network) {
+                // Network is available
+                runOnUiThread {
+                    Toast.makeText(
+                        this@MainActivity,
+                        "Network connection restored",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    
+                    // Refresh data if needed
+                    if (categoryList.isEmpty()) {
+                        fetchCategories()
+                    }
+                }
+            }
+
+            override fun onLost(network: Network) {
+                // Network is lost
+                runOnUiThread {
+                    Toast.makeText(
+                        this@MainActivity,
+                        "Network connection lost",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+        }
+
+        val networkRequest = NetworkRequest.Builder()
+            .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+            .build()
+
+        connectivityManager.registerNetworkCallback(networkRequest, networkCallback)
+        isNetworkCallbackRegistered = true
+    }
+
+    private fun unregisterNetworkCallback() {
+        if (isNetworkCallbackRegistered) {
+            try {
+                connectivityManager.unregisterNetworkCallback(networkCallback)
+                isNetworkCallbackRegistered = false
+            } catch (e: Exception) {
+                // Handle exception
+            }
+        }
+    }
+
     override fun onBackPressed() {
         if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
             drawerLayout.closeDrawer(GravityCompat.START)
@@ -348,6 +517,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+        unregisterNetworkCallback()
         coroutineScope.cancel()
     }
 }

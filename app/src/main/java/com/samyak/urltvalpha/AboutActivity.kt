@@ -61,7 +61,7 @@ class AboutActivity : AppCompatActivity() {
         setContentView(R.layout.activity_about)
 
         // Set status bar color
-        window.statusBarColor = ContextCompat.getColor(this, R.color.Red)
+        window.statusBarColor = ContextCompat.getColor(this, R.color.col_blue_header)
 
         // Initialize views and setup UI
         initViews()
@@ -477,7 +477,7 @@ class AboutActivity : AppCompatActivity() {
             view.performHapticFeedback(android.view.HapticFeedbackConstants.VIRTUAL_KEY)
             Snackbar.make(view, getString(R.string.app_feedback_message), Snackbar.LENGTH_SHORT)
                 .setAnchorView(if (fabGithub.visibility == View.VISIBLE) fabGithub else view)
-                .setBackgroundTint(ContextCompat.getColor(this, R.color.Red))
+                .setBackgroundTint(ContextCompat.getColor(this, R.color.col_blue_2))
                 .setTextColor(ContextCompat.getColor(this, android.R.color.white))
                 .show()
         }
@@ -486,7 +486,7 @@ class AboutActivity : AppCompatActivity() {
     private fun showFeedbackMessage(view: View) {
         Snackbar.make(view, getString(R.string.app_feedback_message), Snackbar.LENGTH_SHORT)
             .setAnchorView(if (fabGithub.visibility == View.VISIBLE) fabGithub else view)
-            .setBackgroundTint(ContextCompat.getColor(this, R.color.Red))
+            .setBackgroundTint(ContextCompat.getColor(this, R.color.col_blue_2))
             .setTextColor(ContextCompat.getColor(this, android.R.color.white))
             .show()
     }
@@ -501,7 +501,7 @@ class AboutActivity : AppCompatActivity() {
         } catch (e: Exception) {
             Snackbar.make(view, getString(R.string.github_error_message), Snackbar.LENGTH_SHORT)
                 .setAnchorView(if (fabGithub.visibility == View.VISIBLE) fabGithub else view)
-                .setBackgroundTint(ContextCompat.getColor(this, R.color.Red))
+                .setBackgroundTint(ContextCompat.getColor(this, R.color.col_blue_2))
                 .setTextColor(ContextCompat.getColor(this, android.R.color.white))
                 .show()
         }

@@ -9,6 +9,13 @@
     <color name="Red_light">#66F8144F</color>
     <color name="textColor">#616161</color>
     <color name="colorNormalBg">#ffffffff</color>
+    <color name="col_blue_header">#115282</color>
+    <color name="col_blue_header_80">#80115282</color>
+    <color name="col_blue_header_40">#40115282</color>
+    <color name="col_blue_header_10">#10115282</color>
+    <color name="col_blue_2">#005071</color>
+
+
 
     <color name="transparent">@android:color/transparent</color>
     

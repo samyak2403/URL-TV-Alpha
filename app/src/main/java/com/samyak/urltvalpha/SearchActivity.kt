@@ -1,6 +1,7 @@
 package com.samyak.urltvalpha
 
 import android.content.Context
+import android.graphics.PorterDuff
 import android.graphics.Rect
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
@@ -87,9 +88,16 @@ class SearchActivity : AppCompatActivity() {
             getString(R.string.search_activity_title),
             true
         )
+        
+        // Set back arrow color to white
+        supportActionBar?.let {
+            val upArrow = ContextCompat.getDrawable(this, androidx.appcompat.R.drawable.abc_ic_ab_back_material)
+            upArrow?.setColorFilter(ContextCompat.getColor(this, R.color.white), PorterDuff.Mode.SRC_ATOP)
+            it.setHomeAsUpIndicator(upArrow)
+        }
 
         // Set background color
-        window.decorView.setBackgroundColor(ContextCompat.getColor(this, R.color.Red_light))
+        window.decorView.setBackgroundColor(ContextCompat.getColor(this, R.color.col_blue_2))
         
         // Setup search edit text
         searchEditText.hint = getString(R.string.search_hint)
@@ -200,7 +208,7 @@ class SearchActivity : AppCompatActivity() {
         window.apply {
             clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
             addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
-            statusBarColor = ContextCompat.getColor(this@SearchActivity, R.color.Red)
+            statusBarColor = ContextCompat.getColor(this@SearchActivity, R.color.col_blue_header)
         }
     }
 

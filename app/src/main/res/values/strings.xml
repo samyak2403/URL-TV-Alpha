@@ -121,7 +121,7 @@
 
 
     <!-- AdMob Ad Unit IDs -->
-    <string name="admob_app_id">ca-app-pub-6211293117600297~8819418046</string>
+    <string name="admob_app_id">ca-app-pub-3940256099942544~3347511713</string>
     <string name="admob_interstitial_id" translatable="false">ca-app-pub-6211293117600297/8164811929</string>
     <string name="admob_banner_id" translatable="false">ca-app-pub-6211293117600297/1223133082</string>
     <string name="admob_rewarded_interstitial_id" translatable="false">ca-app-pub-3940256099942544/5354046379</string>

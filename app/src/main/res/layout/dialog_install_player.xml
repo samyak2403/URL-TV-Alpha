@@ -64,7 +64,7 @@
                 android:layout_weight="1"
                 android:text="Install Now"
                 android:textColor="#FFFFFF"
-                android:backgroundTint="@color/Red" />
+                android:backgroundTint="@color/col_blue_header" />
         </LinearLayout>
     </LinearLayout>
 </androidx.cardview.widget.CardView> 

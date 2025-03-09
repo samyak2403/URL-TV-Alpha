@@ -11,7 +11,7 @@
         android:id="@+id/appBarLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/Red"
+        android:background="@color/col_blue_header"
         android:elevation="4dp"
         app:liftOnScroll="true"
         app:liftOnScrollTargetViewId="@id/scrollView"
@@ -51,7 +51,7 @@
                 android:layout_height="160dp"
                 android:layout_marginTop="24dp"
                 android:alpha="1"
-                android:background="@drawable/circle_gradient_background"
+                android:background="@drawable/circle_gradient_blue_background"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
@@ -70,7 +70,7 @@
                 app:layout_constraintStart_toStartOf="@id/iconBackground"
                 app:layout_constraintTop_toTopOf="@id/iconBackground"
                 app:shapeAppearanceOverlay="@style/CircularImageView"
-                app:strokeColor="@color/Red"
+                app:strokeColor="@color/col_blue_header"
                 app:strokeWidth="3dp" />
 
             <com.google.android.material.textview.MaterialTextView
@@ -80,7 +80,7 @@
                 android:layout_marginTop="24dp"
                 android:text="@string/app_name"
                 android:textAppearance="@style/TextAppearance.MaterialComponents.Headline4"
-                android:textColor="@color/Red"
+                android:textColor="@color/col_blue_header"
                 android:textStyle="bold"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
@@ -106,7 +106,7 @@
                 android:layout_height="3dp"
                 android:layout_marginTop="32dp"
                 android:alpha="0.2"
-                android:background="@color/Red"
+                android:background="@color/col_blue_header"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/versionTextView" />
@@ -149,7 +149,7 @@
                         android:layout_width="80dp"
                         android:layout_height="80dp"
                         android:alpha="1"
-                        android:background="@drawable/circle_gradient_background"
+                        android:background="@drawable/circle_gradient_blue_background"
                         app:layout_constraintBottom_toBottomOf="@id/githubButton"
                         app:layout_constraintStart_toStartOf="parent"
                         app:layout_constraintTop_toTopOf="parent" />
@@ -167,9 +167,9 @@
                         app:layout_constraintStart_toStartOf="@id/avatarBackground"
                         app:layout_constraintTop_toTopOf="@id/avatarBackground"
                         app:shapeAppearanceOverlay="@style/CircularImageView"
-                        app:strokeColor="@color/Red"
+                        app:strokeColor="@color/col_blue_header"
                         app:strokeWidth="2dp"
-                        app:tint="@color/Red" />
+                        app:tint="@color/col_blue_header" />
 
                     <com.google.android.material.textview.MaterialTextView
                         android:id="@+id/developerLabel"
@@ -192,7 +192,7 @@
                         android:layout_marginTop="4dp"
                         android:text="@string/developer_name_display"
                         android:textAppearance="@style/TextAppearance.MaterialComponents.Body1"
-                        android:textColor="@color/Red"
+                        android:textColor="@color/col_blue_header"
                         android:textStyle="bold"
                         app:layout_constraintEnd_toEndOf="parent"
                         app:layout_constraintStart_toEndOf="@id/avatarBackground"
@@ -207,12 +207,12 @@
                         android:layout_marginStart="16dp"
                         android:layout_marginTop="8dp"
                         android:text="@string/view_on_github"
-                        android:textColor="@color/Red"
+                        android:textColor="@color/col_blue_header"
                         app:icon="@drawable/ic_github"
-                        app:iconTint="@color/Red"
+                        app:iconTint="@color/col_blue_header"
                         app:layout_constraintStart_toEndOf="@id/avatarBackground"
                         app:layout_constraintTop_toBottomOf="@id/developerName"
-                        app:strokeColor="@color/Red" />
+                        app:strokeColor="@color/col_blue_header" />
 
                     <View
                         android:id="@+id/copyrightDivider"
@@ -220,7 +220,7 @@
                         android:layout_height="1dp"
                         android:layout_marginTop="24dp"
                         android:alpha="0.1"
-                        android:background="@color/Red"
+                        android:background="@color/col_blue_header"
                         app:layout_constraintTop_toBottomOf="@id/githubButton" />
 
                     <com.google.android.material.textview.MaterialTextView
@@ -247,7 +247,7 @@
                 android:text="@string/view_on_github"
                 android:textColor="@android:color/white"
                 android:visibility="invisible"
-                app:backgroundTint="@color/Red"
+                app:backgroundTint="@color/col_blue_header"
                 app:icon="@drawable/ic_github"
                 app:iconTint="@android:color/white"
                 app:layout_constraintBottom_toBottomOf="parent"

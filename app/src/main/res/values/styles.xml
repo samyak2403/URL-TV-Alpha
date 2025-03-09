@@ -86,7 +86,7 @@
         <item name="android:elevation">4dp</item>
         <item name="android:padding">2dp</item>
         <item name="strokeWidth">2dp</item>
-        <item name="strokeColor">@color/Red</item>
+        <item name="strokeColor">@color/col_blue_header</item>
         <item name="android:background">@android:color/white</item>
     </style>
 
@@ -100,9 +100,9 @@
     <style name="DeveloperCardStyle" parent="Widget.MaterialComponents.CardView">
         <item name="cardCornerRadius">12dp</item>
         <item name="cardElevation">4dp</item>
-        <item name="strokeColor">@color/Red</item>
+        <item name="strokeColor">@color/col_blue_header</item>
         <item name="strokeWidth">1dp</item>
-        <item name="rippleColor">@color/Red</item>
+        <item name="rippleColor">@color/col_blue_header</item>
         <item name="android:clickable">true</item>
         <item name="android:focusable">true</item>
         <item name="android:foreground">?attr/selectableItemBackground</item>
@@ -110,5 +110,24 @@
         <item name="cardPreventCornerOverlap">true</item>
         <item name="cardUseCompatPadding">true</item>
         <item name="contentPadding">0dp</item>
+    </style>
+
+    <!-- Base application theme -->
+    <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="colorPrimary">@color/col_blue_header</item>
+        <item name="colorPrimaryDark">@color/col_blue_header</item>
+        <item name="colorAccent">@color/col_blue_header</item>
+    </style>
+
+    <!-- Navigation header text style -->
+    <style name="NavHeaderText">
+        <item name="android:textColor">@android:color/white</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:fontFamily">sans-serif-light</item>
+        <item name="android:alpha">0.9</item>
+        <item name="android:shadowColor">#40000000</item>
+        <item name="android:shadowDx">1</item>
+        <item name="android:shadowDy">1</item>
+        <item name="android:shadowRadius">2</item>
     </style>
 </resources>
