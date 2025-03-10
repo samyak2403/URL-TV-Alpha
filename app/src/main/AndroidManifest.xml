@@ -26,11 +26,16 @@
     <!-- Vibration for feedback -->
     <uses-permission android:name="android.permission.VIBRATE"/>
     
+    <!-- Notification permissions for OneSignal -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    
     <!-- For Picture-in-Picture mode -->
     <uses-feature android:name="android.software.picture_in_picture" android:required="false"/>
     <uses-feature android:name="android.hardware.wifi" android:required="false"/>
 
     <application
+        android:name=".ApplicationClass"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -40,6 +45,12 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.URLTVAlpha"
         tools:targetApi="31">
+
+        <!-- OneSignal Service -->
+        <service
+            android:name="com.onesignal.notifications.services.SyncService"
+            android:stopWithTask="true"
+            android:exported="false" />
 
         <activity
             android:name="com.samyak.urlplayerbeta.screen.PlayerActivity"

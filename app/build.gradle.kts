@@ -84,7 +84,7 @@ dependencies {
     //custom chrome tabs for integrating youtube
     implementation(libs.androidx.browser)
 
-
+    implementation("com.onesignal:OneSignal:[5.0.0, 5.1.99]")
 
     // Gauge Library
 //    implementation("com.github.Gruzer:simple-gauge-android:0.3.1")
